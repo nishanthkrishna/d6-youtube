@@ -54,14 +54,18 @@ function _load_youtube_palylist($id, $max_results='') {
 
     $start_index = ($pager_page_array[$element]) * $max_results + 1;
     $gdat_base_url = variable_get('youtube_playlist_gdata_playlist', "http://gdata.youtube.com/feeds/api/playlists");
+    try {
+        $data = youtube_playlist_get_youtube_playlist_feed($id, $gdat_base_url, $start_index, $max_results);
+        if ($data) {
+            $pager_total_items[$element] = $data->data->totalItems;
+            $pager_total[$element] = ceil($pager_total_items[$element] / $max_results);
+            $pager_page_array[$element] = max(0, min((int) $pager_page_array[$element], ((int) $pager_total[$element]) - 1));
+            $pager = theme('pager', array(), $max_results, $element);
+            return theme(array("youtubeplaylist"), $data, $pager);
+        }
+    } catch (Exception $e) {
     
-    $data= youtube_playlist_get_youtube_playlist_feed($id,$gdat_base_url,$start_index,$max_results);
-    if ($data) {
-        $pager_total_items[$element] = $data->data->totalItems;
-        $pager_total[$element] = ceil($pager_total_items[$element] / $max_results);
-        $pager_page_array[$element] = max(0, min((int) $pager_page_array[$element], ((int) $pager_total[$element]) - 1));
-        $pager = theme('pager', array(), $max_results, $element);
-        return theme(array("youtubeplaylist"), $data, $pager);
+        drupal_set_message($e->getMessage, 'error');
     }
 }
 
