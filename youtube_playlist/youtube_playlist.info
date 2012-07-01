@@ -1,0 +1,6 @@
+name = Youtube Playlist
+description = Defines an Youtube Playlist field type.
+dependencies[] = content
+package = CCK
+core = 6.x
+version = "6.x-1.1"
