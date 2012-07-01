@@ -1,0 +1,319 @@
+<?php
+
+/*
+ * 
+ * Implements hook_perm()
+ */
+
+function youtube_playlist_perm() {
+    return array('administer youtube_playlist settings');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function youtube_playlist_theme() {
+
+    $base = array(
+        'file' => 'youtube_playlist_theme.inc',
+        'path' => NULL,
+    );
+    return array(
+        'youtube_playlist_formatter_default' => $base + array(
+    'arguments' => array('element' => NULL),
+        ),
+        'youtube_playlist_formatter_plain' => $base + array(
+    'arguments' => array('element' => NULL),
+        ),
+        'youtube_playlist_formatter_videolist' => $base + array(
+    'arguments' => array('element' => NULL)
+        ),
+        'youtubeplaylist' => $base + array(
+    'arguments' => array('content' => NULL, 'youtubepager' => NULL),
+    'template' => 'youtubeplaylist'
+        )
+    );
+}
+
+/**
+ * implements hook_menu()
+ * @return array 
+ */
+function youtube_playlist_menu() {
+
+    $items = array();
+
+    $items['admin/settings/youtube_playlist'] = array(
+        'title' => 'Youtube playlist settings',
+        'description' => 'Youtube playlist field settings',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('youtube_playlist_admin'),
+        'access arguments' => array('administer youtube_playlist settings'),
+        'type' => MENU_NORMAL_ITEM,
+        'file' => 'youtube_playlist_admin.inc'
+    );
+    $items['playlist/autocomplete'] = array(
+        'title' => 'Autocomplete art',
+        'page callback' => 'youtube_playlist_autocomplete',
+        'access arguments' => array('administer youtube_playlist'),
+        'type' => MENU_NORMAL_ITEM,
+        'file' => 'youtube_playlist_admin.inc'
+    );
+
+    return $items;
+}
+
+/**
+ * Implementation of hook_field_info().
+ */
+function youtube_playlist_field_info() {
+
+    return array(
+        'youtube_playlist' => array(
+            'label' => t('Youtube Play list ID'),
+            'description' => t('YouTube Play list ID')
+        ),
+    );
+}
+
+/**
+ * Implementation of hook_field_settings().
+ */
+function youtube_playlist_field_settings($op, $field) {
+
+    switch ($op) {
+        case 'form':
+            $form = array();
+            $form['max_length'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Maximum length'),
+                '#default_value' => is_numeric($field['max_length']) ? $field['max_length'] : 255,
+                '#required' => FALSE,
+                // Use #element_validate to validate the settings.
+                '#element_validate' => array('_youtube_playlist_length_validate'),
+                '#description' => t('The maximum length of the field in characters. Must be a number between 1 and 255'),
+            );
+            return $form;
+
+        case 'save':
+            return array('max_length');
+
+        case 'database columns':
+            $columns['value'] = array(
+                'type' => 'varchar',
+                'length' => is_numeric($field['max_length']) ? $field['max_length'] : 255,
+                'not null' => FALSE,
+                'sortable' => TRUE,
+                'views' => TRUE,
+            );
+            $columns['recordsperpage'] = array(
+                'type' => 'int',
+                'length' => 11,
+                'not null' => FALSE,
+                'sortable' => TRUE,
+                'views' => TRUE,
+            );
+
+
+            return $columns;
+
+// Optional: Make changes to the default $data array 
+// created for Views. Omit this if no changes are 
+// needed, use it to add a custom handler or make 
+// other changes.
+        case 'views data':
+// Start with the $data created by CCK
+// and alter it as needed. The following
+// code illustrates how you would retrieve
+// the necessary data.
+            $data = content_views_field_views_data($field);
+            $db_info = content_database_info($field);
+            $table_alias = content_views_tablename($field);
+            $field_data = $data[$table_alias][$field['field_name'] . '_value'];
+
+
+// Make changes to $data as needed here.
+            return $data;
+    }
+}
+
+/**
+ * Implementation of hook_field().
+ */
+function youtube_playlist_field($op, &$node, $field, &$items, $teaser, $page) {
+
+    switch ($op) {
+        case 'validate':
+            if (is_array($items)) {
+                foreach ($items as $delta => $item) {
+// The error_element is needed so that CCK can 
+// set an error on the right sub-element when 
+// fields are deeply nested in the form.
+                    $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
+                    if (is_array($item) && isset($item['_error_element']))
+                        unset($item['_error_element']);
+                    if (!empty($item['value'])) {
+                        if (!empty($field['max_length']) && drupal_strlen($item['value']) > $field['max_length']) {
+                            form_set_error($error_element, t('%name: the value may not be longer than %max characters.', array('%name' => $field['widget']['label'], '%max' => $field['max_length'])));
+                        }
+                    }
+                }
+            }
+            return $items;
+
+
+
+// This is where you make sure that user-provided 
+// data is sanitized before being displayed.
+        case 'sanitize':
+            foreach ($items as $delta => $item) {
+                $items[$delta]['safe'] = check_plain($item['value']);
+            }
+    }
+}
+
+function _youtube_playlist_length_validate($element, &$form_state) {
+    $value = $form_state['values']['max_length'];
+    if ($value && !is_numeric($value) || $value < 1 || $value > 255) {
+        form_set_error('max_length', t('"Max length" must be a number between 1 and 255.'));
+    }
+}
+
+function youtube_playlist_content_is_empty($item, $field) {
+    if (empty($item['value'])) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Implementation of hook_token_list() 
+ * and hook_token_values().
+ * 
+ * Optional, provide token values for this field.
+ */
+function youtube_playlist_token_list($type = 'all') {
+    if ($type == 'field' || $type == 'all') {
+        $tokens = array();
+
+        $tokens['youtube_playlist']['raw'] = t('Raw, unfiltered text');
+        $tokens['youtube_playlist']['formatted'] = t('Formatted and filtered text');
+
+        return $tokens;
+    }
+}
+
+function youtube_playlist_values($type, $object = NULL) {
+    if ($type == 'field') {
+        $item = $object[0];
+
+        $tokens['raw'] = $item['value'];
+        $tokens['formatted'] = isset($item['view']) ? $item['view'] : '';
+        return $tokens;
+    }
+}
+
+function youtube_playlist_widget_info() {
+
+    return array(
+        'youtube_playlist_widget' => array(
+            'label' => t('youtube playlist widget'),
+            'field types' => array('youtube_playlist'),
+            // Who will handle multiple values, default is core.
+// 'CONTENT_HANDLE_MODULE' means the module does it.
+// See optionwidgets for an example of a module that 
+// handles its own multiple values.
+            'multiple values' => CONTENT_HANDLE_CORE,
+            'callbacks' => array(
+// Who will create the default value, default is core.
+// 'CONTENT_CALLBACK_CUSTOM' means the module does it.
+// 'CONTENT_CALLBACK_NONE' means this widget has 
+// no default value.
+                'default value' => CONTENT_CALLBACK_DEFAULT,
+            ),
+        ),
+    );
+}
+
+/**
+ * Implementation of hook_widget_settings().
+ */
+function youtube_playlist_widget_settings($op, $widget) {
+    switch ($op) {
+        case 'form':
+            $form = array();
+            $size = (isset($widget['size']) && is_numeric($widget['size'])) ? $widget['size'] : 60;
+            $form['size'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Size of textfield'),
+                '#default_value' => $size,
+                '#element_validate' => array('_element_validate_integer_positive'),
+                '#required' => TRUE,
+            );
+            return $form;
+        case 'save':
+            return array('size');
+    }
+}
+
+function youtube_playlist_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+
+    $element['value'] = array(
+        '#type' => 'textfield',
+        '#description' => t("Enter Youtube playlist id.Field supports autocomplete."),
+        '#title' => check_plain($field['widget']['label']),
+        '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
+        '#autocomplete_path' => 'playlist/autocomplete', //
+        '#size' => !empty($field['widget']['size']) ? $field['widget']['size'] : 60,
+        '#attributes' => array('class' => 'form-text'),
+        '#maxlength' => !empty($field['max_length']) ? $field['max_length'] : NULL,
+    );
+
+    $element['recordsperpage'] = array(
+        '#type' => 'textfield',
+        '#description' => t("Youtube playlist records per page"),
+        '#title' => t("Youtube playlist records per page"),
+        '#default_value' => isset($items[$delta]['recordsperpage']) ? $items[$delta]['recordsperpage'] : NULL,
+        '#attributes' => array('class' => 'form-text playlistrecordsperpage'),
+        '#maxlength' => 3
+    );
+
+
+
+// Used so that hook_field('validate') knows where to 
+// flag an error in deeply nested forms.
+    if (empty($form['#parents'])) {
+        $form['#parents'] = array();
+    }
+    $element['_error_element'] = array(
+        '#type' => 'value',
+        '#value' => implode('][', array_merge($form['#parents'], array('value'))),
+    );
+
+    return $element;
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ * 
+ */
+function youtube_playlist_field_formatter_info() {
+    return array(
+        'default' => array(
+            'label' => t('Default'),
+            'field types' => array('youtube_playlist'),
+            'multiple values' => CONTENT_HANDLE_CORE,
+        ),
+        'plain' => array(
+            'label' => t('Plain text'),
+            'field types' => array('youtube_playlist'),
+            'multiple values' => CONTENT_HANDLE_CORE,
+        ),
+        'videolist' => array(
+            'label' => t('Video List'),
+            'field types' => array('youtube_playlist'),
+            'multiple values' => CONTENT_HANDLE_CORE,
+        )
+    );
+}
+

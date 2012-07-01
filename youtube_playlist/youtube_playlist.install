@@ -1,0 +1,43 @@
+<?php
+
+// Notify CCK when this module is enabled, disabled, installed, 
+// and uninstalled so CCK can do any necessary preparation or cleanup.
+/**
+* @file
+* Implementation of hook_install().
+*/
+function youtube_playlist_install() {
+  drupal_load('module', 'content');
+  content_notify('install', 'youtube_playlist');
+}
+
+/**
+* Implementation of hook_uninstall().
+*/
+function youtube_playlist_uninstall() {
+  drupal_load('module', 'content');
+  content_notify('uninstall', 'youtube_playlist');
+}
+
+
+/**
+* Implementation of hook_enable().
+*
+* Notify content module when this module is enabled.
+*/
+function youtube_playlist_enable() {
+  drupal_load('module', 'content');
+  content_notify('enable', 'youtube_playlist');
+}
+
+/**
+* Implementation of hook_disable().
+*
+* Notify content module when this module is disabled.
+*/
+function youtube_playlist_disable() {
+  drupal_load('module', 'content');
+  content_notify('disable', 'youtube_playlist');
+}
+
+?>
