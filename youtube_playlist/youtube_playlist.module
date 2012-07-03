@@ -6,7 +6,7 @@
  */
 
 function youtube_playlist_perm() {
-    return array('administer youtube_playlist settings');
+    return array('administer youtube_playlist','administer youtube_playlist settings');
 }
 
 /**
