@@ -25,9 +25,7 @@ function youtube_playlist_theme() {
         'youtube_playlist_formatter_plain' => $base + array(
     'arguments' => array('element' => NULL),
         ),
-        'youtube_playlist_formatter_videolist' => $base + array(
-    'arguments' => array('element' => NULL)
-        ),
+        
         'youtubeplaylist' => $base + array(
     'arguments' => array('content' => NULL, 'youtubepager' => NULL),
     'template' => 'youtubeplaylist'
@@ -53,7 +51,7 @@ function youtube_playlist_menu() {
         'file' => 'youtube_playlist_admin.inc'
     );
     $items['playlist/autocomplete'] = array(
-        'title' => 'Autocomplete art',
+        'title' => 'Autocomplete',
         'page callback' => 'youtube_playlist_autocomplete',
         'access arguments' => array('administer youtube_playlist'),
         'type' => MENU_NORMAL_ITEM,
@@ -308,12 +306,8 @@ function youtube_playlist_field_formatter_info() {
             'label' => t('Plain text'),
             'field types' => array('youtube_playlist'),
             'multiple values' => CONTENT_HANDLE_CORE,
-        ),
-        'videolist' => array(
-            'label' => t('Video List'),
-            'field types' => array('youtube_playlist'),
-            'multiple values' => CONTENT_HANDLE_CORE,
         )
+       
     );
 }
 
