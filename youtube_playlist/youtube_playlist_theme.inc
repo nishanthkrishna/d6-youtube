@@ -1,20 +1,13 @@
 <?php
 
-function theme_youtube_playlist_formatter_videolist($element) {
-    try {
-        $element['#item']['safe'] = _load_youtube_palylist($element['#item']['safe'], $element['#item']['recordsperpage']);
-    } catch (Exception $e) {
-        drupal_set_message($e->getMessage, 'error');
-    }
-    return $element['#item']['safe'];
-}
+
 
 //==========================================//
 // DEFINING A FORMATTER
 //==========================================//
 
 /**
- * Theme function for 'default' example field formatter.
+ * Theme function for 'default'  field formatter.
  * 
  * $element['#item']: the sanitized $delta value for the item,
  * $element['#field_name']: the field name,
@@ -25,11 +18,16 @@ function theme_youtube_playlist_formatter_videolist($element) {
  * 
  */
 function theme_youtube_playlist_formatter_default($element) {
+    try {
+        $element['#item']['safe'] = _load_youtube_palylist($element['#item']['safe'], $element['#item']['recordsperpage']);
+    } catch (Exception $e) {
+        drupal_set_message($e->getMessage, 'error');
+    }
     return $element['#item']['safe'];
 }
 
 /**
- * Theme function for 'plain' example field formatter.
+ * Theme function for 'plain'  field formatter.
  */
 function theme_youtube_playlist_formatter_plain($element) {
     return strip_tags($element['#item']['safe']);
